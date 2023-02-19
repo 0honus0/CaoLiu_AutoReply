@@ -8,9 +8,24 @@ import onetimepass as otp
 from time import sleep
 from typing import BinaryIO , Dict , List , Union
 import base64
-from log import outputLog
+import logging.config ,sys
 
 __verison__ = "0.23.02.19.0"
+
+def outputLog(projectName):
+    log = logging.getLogger(f"{projectName}")
+    log.setLevel(level=logging.DEBUG)
+    formatter = logging.Formatter('[%(asctime)s] [%(levelname)s]\t%(message)s')
+    # 输出日志到终端
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.formatter = formatter
+    log.addHandler(console_handler)
+    #输出日志到文件
+    file_handler = logging.FileHandler(f'{projectName}.log', encoding='utf-8')
+    file_handler.formatter = formatter
+    file_handler.level = logging.INFO
+    log.addHandler(file_handler)
+    return log
 
 log = outputLog("CaoLiu_AutoReply")
 
