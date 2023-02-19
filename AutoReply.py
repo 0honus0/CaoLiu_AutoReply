@@ -3,53 +3,59 @@ import pickle
 import random
 import re
 import os
-import json
+import json, yaml
 import onetimepass as otp
 from time import sleep
 from typing import BinaryIO , Dict , List , Union
 import base64
-import logging
+import logging.config ,sys
 
-__verison__ = "0.23.02.05.1"
+__verison__ = "0.23.02.19.0"
 
-#从 https://truecaptcha.org/ 处注册获取userid和apikey
-userid : str = "xxxx"
-apikey : str = "xxxx"
+def outputLog(projectName):
+    log = logging.getLogger(f"{projectName}")
+    log.setLevel(level=logging.DEBUG)
+    formatter = logging.Formatter('[%(asctime)s] [%(levelname)s]\t%(message)s')
+    # 输出日志到终端
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.formatter = formatter
+    log.addHandler(console_handler)
+    #输出日志到文件
+    file_handler = logging.FileHandler(f'{projectName}.log', encoding='utf-8')
+    file_handler.formatter = formatter
+    file_handler.level = logging.INFO
+    log.addHandler(file_handler)
+    return log
 
-#用户名 密码 2FA原始密钥16位或32位 多个账号用空格分隔
-user : str = "xxxx xxxx"
-password : str = "xxxx xxxx"
-secret : str = "xxxx xxxx"
+log = outputLog("CaoLiu_AutoReply")
 
-#循环间隔
-PollingTime : int = 5
-#回复次数限制
-ReplyLimit : int = 10
-#禁止版主帖子回复和关键字屏蔽
-Forbid : bool = True
-#手动输入验证码
-Input_self : bool = False
-#每日点赞
-Like : bool = True
-#时间间隔最小
-TimeIntervalStart : bool = 1024
-#时间间隔最大
-TimeIntervalEnd : bool = 2048
-#回复内容
-ReplyContent : List = ['感谢分享','感谢你的分享','谢谢分享','多谢分享','感谢作者的分享','谢谢坛友分享','内容精彩','的确如此','感谢分享','涨知识了','很有意思']
-#关键字屏蔽，主要防止签到贴
-ForbidContent : List = ['签到','专用贴','禁止无关回复']
+try:
+    with open("config.yml", "r+", encoding='utf8') as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
+except FileNotFoundError:
+    log.error("配置文件“config.yml”不存在！")
+    os._exit(0)
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-FORMAT = '%(asctime)s %(message)s'
-logging.basicConfig(format=FORMAT)
+userid : str = config.get("gobal_config").get("truecaptcha_config").get("userid")
+apikey : str = config.get("gobal_config").get("truecaptcha_config").get("apikey")
+user : str = config.get("user_config").get("user")
+password : str = config.get("user_config").get("password")
+secret : str = config.get("user_config").get("secret")
+PollingTime : int = config.get("gobal_config").get("PollingTime", 5)
+ReplyLimit : int = config.get("gobal_config").get("ReplyLimit", 10)
+Forbid : bool = config.get("gobal_config").get("Forbid", True)
+Input_self : bool = config.get("gobal_config").get("Input_self", False)
+Like : bool = config.get("gobal_config").get("Like", True)
+TimeIntervalStart : bool = config.get("gobal_config").get("TimeIntervalStart", 1024)
+TimeIntervalEnd : bool = config.get("gobal_config").get("TimeIntervalEnd", 2048)
+ReplyContent : List = config.get("gobal_config").get("ReplyContent")
+ForbidContent : List = config.get("gobal_config").get("ForbidContent")
 
 def save_cookies(session : requests.Session , filename : str) -> None:
     with open(filename, 'wb') as f:
         try:
             pickle.dump(session.cookies, f)
-            logger.debug(f"save {filename} success")
+            log.debug(f"save {filename} success")
         except:
             ...
 
@@ -57,7 +63,7 @@ def load_cookies(session : requests.Session , filename : str) -> None:
     with open(filename, 'rb') as f:
         try:
             session.cookies.update(pickle.load(f))
-            logger.debug(f"load {filename} success")
+            log.debug(f"load {filename} success")
         except:
             ...
 
@@ -74,9 +80,9 @@ def apitruecaptcha(content : BinaryIO) -> str:
     try:
         code = res['result']
     except:
-        logger.debug(f"api error,{str(res)}")
+        log.debug(f"api error,{str(res)}")
         code = "XXXX"
-    logger.debug("apitruecaptcha code: %s" % code)
+    log.debug("apitruecaptcha code: %s" % code)
     return code
 
 def ttshitu(content : BinaryIO) -> str:
@@ -100,7 +106,7 @@ class User:
     Like : bool = False
     Retry : int = 5
     RetryList : int = 10
-    Host : str = "https://t66y.com/"
+    Host : str = f"https://{config.get('gobal_config').get('Host', 't66y.com')}/"
     Index : str = f"{Host}index.php"
     Login : str = f"{Host}login.php"
     Post : str = f"{Host}post.php?"
@@ -134,19 +140,19 @@ class User:
                     return
                 else:
                     self.cookies = self.s.cookies
-                    logger.info(f"{self.username} cookies is valid , login success")
+                    log.info(f"{self.username} cookies is valid , login success")
                     return
             else:
-                logger.info(f"{self.username} cookies is invalid , login again")
+                log.info(f"{self.username} cookies is invalid , login again")
         if self.login():
             self.cookies = self.s.cookies
             save_cookies(self.s, file)
             if self.is_ban_cookies():
                 self.set_invalid()
                 return
-            logger.info(f"{self.username} login success") 
+            log.info(f"{self.username} login success") 
         else:
-            logger.info(f"{self.username} login failed")
+            log.info(f"{self.username} login failed")
             self.set_invalid()
 
     def login(self) -> None:
@@ -192,9 +198,9 @@ class User:
             }
             login = self.s.post(self.Login , data = data , headers = self.Headers)
             if "驗證碼不正確，請重新填寫" in login.text:
-                logger.info(f"{self.username} captcha with code: {vercode} failed")
+                log.info(f"{self.username} captcha with code: {vercode} failed")
             else:
-                logger.info(f"{self.username} captcha with code: {vercode} success") 
+                log.info(f"{self.username} captcha with code: {vercode} success") 
 
         res = login1()
         if res.find("您已經順利登錄") != -1:
@@ -205,16 +211,16 @@ class User:
                 return True
         elif res.find("登录尝试次数过多") != -1:
             captcha()
-            logger.debug(f"{self.username} complete captcha")
+            log.debug(f"{self.username} complete captcha")
             # 請輸入您的帳號與密碼
         
         if self.Retry > 0:
-            logger.debug(f"{self.username} retry login,remaining retry times: %d" % self.Retry)
+            log.debug(f"{self.username} retry login,remaining retry times: %d" % self.Retry)
             self.Retry -= 1
             if self.login():
                 return True
         else:
-            logger.debug(f"{self.username} login failed!")
+            log.debug(f"{self.username} login failed!")
             return False
 
     #校验cookies是否有效
@@ -237,7 +243,7 @@ class User:
     def reply(self, url) -> None:
         sleep(2)
         if self.ReplyCount == 0:
-            logger.info(f"{self.username} reply completed")
+            log.info(f"{self.username} reply completed")
             return
         title = self.get_title(url)
         content = self.get_reply_content()
@@ -261,20 +267,20 @@ class User:
         res = requests.post(url = self.Post , data = data , headers = self.Headers , cookies = self.cookies )
         if res.text.find("發貼完畢點擊進入主題列表") != -1:
             self.ReplyCount -= 1
-            logger.info(f"{self.username} reply {title} with {content} success , remaining reply times: %d" % self.ReplyCount)
+            log.info(f"{self.username} reply {title} with {content} success , remaining reply times: %d" % self.ReplyCount)
             return True
         elif res.text.find("灌水預防機制") != -1:
-            logger.info(f"{self.username} reply failed , user replay too frequency")
+            log.info(f"{self.username} reply failed , user replay too frequency")
             return True
         elif res.text.find("所屬的用戶組") != -1:
-            logger.debug(f"{self.username} reply failed , day reply times is over")
+            log.debug(f"{self.username} reply failed , day reply times is over")
             return False
         elif res.text.find("管理員禁言, 類型為永久禁言") != -1:
-            logger.debug(f"{self.username} reply failed , user is banned")
+            log.debug(f"{self.username} reply failed , user is banned")
             return False
         else:
-            logger.debug(f"{self.username} reply failed , unknown error")
-            logger.error(res.text)
+            log.debug(f"{self.username} reply failed , unknown error")
+            log.error(res.text)
             return False
 
     def like(self, url : str) -> bool:
@@ -294,7 +300,7 @@ class User:
         res = requests.post(self.Api , headers = self.Headers , data = data , cookies = self.cookies)
         try:
             if int(json.loads(res.text)['myMoney']) > 0 :
-                logger.info(f"{self.username} like success")
+                log.info(f"{self.username} like success")
         except:
             return
 
@@ -323,11 +329,11 @@ class User:
         all_title = re.findall(pat_all_title , content)
         all_content = re.findall(pat_all_content , content)
 
-        logger.debug(f"{self.username} get list number: {str(len(title))}")
+        log.debug(f"{self.username} get list number: {str(len(title))}")
 
         if len(all_title) != len(all_username):
             if self.RetryList > 0:
-                logger.debug(f"{self.username} get list number error , retry get list , remaining retry times: %d" % self.RetryList)
+                log.debug(f"{self.username} get list number error , retry get list , remaining retry times: %d" % self.RetryList)
                 self.RetryList -= 1
                 sleep(2)
                 self.get_today_list()
@@ -338,7 +344,7 @@ class User:
         
         if Forbid:
             black_list : List = []
-            logger.info("moderator list: " + str(" ".join(username)))
+            log.debug("moderator list: " + str(" ".join(username)))
             for index in range(len(all_username)):
                 if all_username[index].strip() in moderator:
                     black_list.append(all_title[index])
@@ -347,7 +353,7 @@ class User:
                     title.remove(item)
                 except:
                     ...
-                logger.debug(f"{self.username} remove {item} from list")
+                log.debug(f"{self.username} remove {item} from list")
 
             black_list : List = []
             for index in range(len(all_content)):
@@ -362,17 +368,17 @@ class User:
                     title.remove(item)
                 except:
                     ...
-                logger.debug(f"{self.username} remove {item} from list")
+                log.debug(f"{self.username} remove {item} from list")
 
         self.ReplyList = title
-        logger.debug(f"{self.username} get reply list number {str(len(title))}")
+        log.debug(f"{self.username} get reply list number {str(len(title))}")
 
     #从今日列表中抽取出一个帖子
     def get_one_link(self) -> Union[str , None]:
         if len(self.ReplyList) == 0:
             return None
         url = self.ReplyList[random.randint(0,len(self.ReplyList)-1)]
-        logger.debug(f"{self.username} get one link: {url}")
+        log.debug(f"{self.username} get one link: {url}")
         self.ReplyList.remove(url)
         return f"{self.Host}{url}"
 
@@ -420,7 +426,7 @@ class User:
         return self.username
 
     def set_invalid(self) -> None:
-        logger.info(f"{self.username} is invalid")
+        log.info(f"{self.username} is invalid")
         self.Invalid = True
 
     def get_invalid(self) -> bool:
@@ -464,7 +470,7 @@ while True:
             continue        
         user.like(url)
         sleep_time = random.randint(TimeIntervalStart,TimeIntervalEnd)
-        logger.info(f"{user.get_username()} sleep {sleep_time} seconds")
+        log.debug(f"{user.get_username()} sleep {sleep_time} seconds")
         user.set_sleep_time(sleep_time)
 
     if return_flag:
