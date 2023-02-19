@@ -1,0 +1,33 @@
+# 用户设置，多个账号之间用空格分隔，并一一对应
+user_config:
+    user: "xxxx xxxx" # 用户名
+    password: "xxxx xxxx" # 密码
+    secret: "xxxx xxxx" # 2FA原始密钥16位或32位
+
+# 全局设置
+gobal_config:
+    #可使用 https://github.com/yuuwill/1024app-uwp 获取免屏蔽域名
+    #应填入一个正确的域名，形如"http://t66y.com"是错误的
+    Host: "t66y.com" 
+    #从 https://truecaptcha.org/profile.html#info-tab 处注册获取userid和apikey
+    truecaptcha_config:
+        userid: "xxxx"
+        apikey: "xxxx"
+    # 循环间隔
+    PollingTime: 5
+    #回复次数限制，【新手上路】期上限为10。不宜过高，过高会被版主永久禁言（理由：灌水）
+    ReplyLimit: 10
+    #禁止版主帖子回复和关键字屏蔽，不建议修改，容易被禁言一周
+    Forbid: true
+    #手动输入验证码
+    Input_self: false
+    #每日点赞
+    Like: true
+    #时间间隔最小值，值不宜过小，【新手上路】期限制1024秒发一帖。频繁发帖也会被禁言
+    TimeIntervalStart: 1024
+    #时间间隔最大值
+    TimeIntervalEnd: 2048
+    #回复内容
+    ReplyContent: ['感谢分享','感谢你的分享','谢谢分享','多谢分享','感谢作者的分享','谢谢坛友分享','内容精彩','的确如此','感谢分享','涨知识了','很有意思']
+    #关键字屏蔽，主要防止签到贴
+    ForbidContent: ['签到','专用贴','禁止无关回复']
