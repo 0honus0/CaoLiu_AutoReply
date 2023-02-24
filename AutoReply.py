@@ -14,7 +14,7 @@ __verison__ = "0.23.02.24.0"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
-    log.setLevel(level=logging.DEBUG)
+    log.setLevel(level=logging.INFO)
     formatter = logging.Formatter('[%(asctime)s] [%(levelname)s]\t%(message)s')
     # 输出日志到终端
     console_handler = logging.StreamHandler(sys.stdout)
@@ -240,7 +240,7 @@ class User:
         else:
             return False
 
-    def reply(self, url) -> None:
+    def reply(self, url) -> bool:
         sleep(2)
         if self.ReplyCount == 0:
             log.info(f"{self.username} reply completed.The account has {self.get_user_USD()} USD now")
@@ -278,8 +278,11 @@ class User:
         elif res.text.find("管理員禁言, 類型為永久禁言") != -1:
             log.debug(f"{self.username} reply failed , user is banned")
             return False
+        elif res.text.find("帖子ID非法") != -1:
+            log.debug(f"{self.username} reply failed , {url} is invaild")
+            return True
         else:
-            log.debug(f"{self.username} reply failed , unknown error")
+            log.error(f"{self.username} reply {url} failed , unknown error")
             log.error(res.text)
             return False
 
