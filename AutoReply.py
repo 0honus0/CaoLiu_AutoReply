@@ -280,6 +280,7 @@ class User:
             return False
         elif res.text.find("帖子ID非法") != -1:
             log.debug(f"{self.username} reply failed , {url} is invaild")
+            return True
         else:
             log.error(f"{self.username} reply {url} failed , unknown error")
             log.error(res.text)
