@@ -278,8 +278,10 @@ class User:
         elif res.text.find("管理員禁言, 類型為永久禁言") != -1:
             log.debug(f"{self.username} reply failed , user is banned")
             return False
+        elif res.text.find("帖子ID非法") != -1:
+            log.debug(f"{self.username} reply failed , {url} is invaild")
         else:
-            log.debug(f"{self.username} reply failed , unknown error")
+            log.error(f"{self.username} reply {url} failed , unknown error")
             log.error(res.text)
             return False
 
