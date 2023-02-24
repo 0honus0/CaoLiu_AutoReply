@@ -14,7 +14,7 @@ __verison__ = "0.23.02.24.0"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
-    log.setLevel(level=logging.INFO)
+    log.setLevel(level=logging.DEBUG)
     formatter = logging.Formatter('[%(asctime)s] [%(levelname)s]\t%(message)s')
     # 输出日志到终端
     console_handler = logging.StreamHandler(sys.stdout)
