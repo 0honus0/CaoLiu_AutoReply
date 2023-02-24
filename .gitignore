@@ -1,0 +1,5 @@
+*.cookies
+.history
+config.yml
+*.log
+*.png

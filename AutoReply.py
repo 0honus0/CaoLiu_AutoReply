@@ -14,7 +14,7 @@ __verison__ = "0.23.02.19.0"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
-    log.setLevel(level=logging.DEBUG)
+    log.setLevel(level=logging.INFO)
     formatter = logging.Formatter('[%(asctime)s] [%(levelname)s]\t%(message)s')
     # 输出日志到终端
     console_handler = logging.StreamHandler(sys.stdout)
@@ -240,7 +240,7 @@ class User:
         else:
             return False
 
-    def reply(self, url) -> None:
+    def reply(self, url) -> bool:
         sleep(2)
         if self.ReplyCount == 0:
             log.info(f"{self.username} reply completed")
