@@ -1,10 +1,19 @@
-# 用户设置，多个账号之间用空格分隔，并一一对应
-user_config:
-    user: "xxxx xxxx" # 用户名
-    password: "xxxx xxxx" # 密码
-    secret: "xxxx xxxx" # 2FA原始密钥16位或32位
-
-# 全局设置
+# 用户配置，每一组是一个账号,按需进行增减。
+users_config:
+    # 注意每行的缩进，建议复制样例再修改。
+        # 账号1
+    -   user: "AAA" # 用户名
+        password: "AAA" # 密码
+        secret: "AAA" # 2FA原始密钥16位或32位
+        # 账号2
+    -   user: "BBB"
+        password: "BBB"
+        secret: "BBB"
+        # 账号3
+    -   user: "CCC"
+        password: "CCC"
+        secret: "CCC"
+# 全局配置
 gobal_config:
     #可使用 https://github.com/yuuwill/1024app-uwp 获取免屏蔽域名
     #应填入一个正确的域名，形如"http://t66y.com"是错误的

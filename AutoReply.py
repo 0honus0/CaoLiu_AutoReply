@@ -38,9 +38,7 @@ except FileNotFoundError:
 
 userid : str = config.get("gobal_config").get("truecaptcha_config").get("userid")
 apikey : str = config.get("gobal_config").get("truecaptcha_config").get("apikey")
-user : str = config.get("user_config").get("user")
-password : str = config.get("user_config").get("password")
-secret : str = config.get("user_config").get("secret")
+usersList = config.get("users_config")
 PollingTime : int = config.get("gobal_config").get("PollingTime", 5)
 ReplyLimit : int = config.get("gobal_config").get("ReplyLimit", 10)
 Forbid : bool = config.get("gobal_config").get("Forbid", True)
@@ -448,13 +446,9 @@ class User:
     def get_sleep_time(self) -> int:
         return self.SleepTime
 
-userlist=user.split()
-passwordlist=password.split()
-secretlist=secret.split()
-
 users = []
-for i in range(len(userlist)):
-    user=User(userlist[i],passwordlist[i],secretlist[i])
+for i in range(len(usersList)):
+    user=User(usersList[i]['user'],usersList[i]['password'],usersList[i]['secret'])
     if user.get_invalid():
         continue
     user.get_today_list()
