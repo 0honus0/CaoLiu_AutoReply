@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.02.26.0"
+__verison__ = "0.23.03.01.0"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -18,12 +18,13 @@ def outputLog(projectName):
     formatter = logging.Formatter('[%(asctime)s] [%(levelname)s]\t%(message)s')
     # 输出日志到终端
     console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.level = logging.INFO
     console_handler.formatter = formatter
     log.addHandler(console_handler)
     #输出日志到文件
     file_handler = logging.FileHandler(f'{projectName}.log', encoding='utf-8')
     file_handler.formatter = formatter
-    file_handler.level = logging.INFO
+    file_handler.level = logging.DEBUG
     log.addHandler(file_handler)
     return log
 
@@ -271,13 +272,13 @@ class User:
             log.info(f"{self.username} reply failed , user replay too frequency")
             return True
         elif res.text.find("所屬的用戶組") != -1:
-            log.debug(f"{self.username} reply failed , day reply times is over")
+            log.info(f"{self.username} reply failed , day reply times is over")
             return False
         elif res.text.find("管理員禁言, 類型為永久禁言") != -1:
-            log.debug(f"{self.username} reply failed , user is banned")
+            log.info(f"{self.username} reply failed , user is banned")
             return False
         elif res.text.find("帖子ID非法") != -1:
-            log.debug(f"{self.username} reply failed , {url} is invaild")
+            log.info(f"{self.username} reply failed , {url} is invaild")
             return True
         else:
             log.error(f"{self.username} reply {url} failed , unknown error")
@@ -434,7 +435,7 @@ class User:
         return self.username
 
     def set_invalid(self) -> None:
-        log.info(f"{self.username} is invalid")
+        log.debug(f"{self.username} is invalid")
         self.Invalid = True
 
     def get_invalid(self) -> bool:
