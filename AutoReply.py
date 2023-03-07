@@ -427,8 +427,8 @@ class User:
     def get_user_USD(self) -> str:
         sleep(2)
         res = requests.get(self.Index , headers = self.Headers , cookies = self.cookies)
-        pat_user_USD = "金錢: \d+"
-        user_USD = re.search(pat_user_USD , res.text).group(0).replace('金錢: ','')
+        pat_user_USD = "威望: \d{1,3}"
+        user_USD = re.search(pat_user_USD , res.text).group(0).replace('威望: ','')
         return user_USD
 
     def get_username(self) -> str:
@@ -455,13 +455,26 @@ for i in range(len(usersList)):
     user.get_today_list()
     users.append(user)
 
+init_sleep_time=0
+allUser_ww=[]
+start_sleep = 0
 while True:
     return_flag = True
+    sleep_time = random.randint(TimeIntervalStart,TimeIntervalEnd)
+    if init_sleep_time == 0:
+        random.shuffle(users)
     for user in users:        
         if user.get_invalid():
             continue
         else:
             return_flag = False
+        if init_sleep_time == 0:
+            user_name = user.get_username()
+            allUser_ww.append(f"{user_name}: {user.get_user_USD()} 威望")
+            log.info(f"{user_name} init {start_sleep} seconds")
+            user.set_sleep_time(start_sleep)
+            start_sleep += random.randint(540, 640)
+            continue
         if user.get_sleep_time() > 0:
             user.set_sleep_time(user.get_sleep_time() - PollingTime)
             continue
@@ -474,11 +487,18 @@ while True:
             user.set_invalid()
             continue        
         user.like(url)
-        sleep_time = random.randint(TimeIntervalStart,TimeIntervalEnd)
         log.debug(f"{user.get_username()} sleep {sleep_time} seconds")
         user.set_sleep_time(sleep_time)
 
     if return_flag:
         os._exit(0)
-
+    
+    if init_sleep_time == 0:
+        # 日志输出: 全部用户名威望值
+        log.info("--------------------->>>")
+        for u in allUser_ww:
+            log.info(u)
+        # 关闭初始化睡眠
+        init_sleep_time = 1
+        log.info("--------------------->>>")
     sleep(PollingTime)
