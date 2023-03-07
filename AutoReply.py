@@ -266,7 +266,7 @@ class User:
         res = requests.post(url = self.Post , data = data , headers = self.Headers , cookies = self.cookies )
         if res.text.find("發貼完畢點擊進入主題列表") != -1:
             self.ReplyCount -= 1
-            log.info(f"{self.username} reply {title} with {content} success , remaining reply times: %d" % self.ReplyCount)
+            log.info(f"{self.username} reply {title} with {content} success , remaining reply times: {self.ReplyCount}" )
             return True
         elif res.text.find("灌水預防機制") != -1:
             log.info(f"{self.username} reply failed , user replay too frequency")
