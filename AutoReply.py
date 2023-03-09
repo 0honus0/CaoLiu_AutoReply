@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.03.01.0"
+__verison__ = "0.23.03.09.0"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -242,7 +242,7 @@ class User:
     def reply(self, url) -> bool:
         sleep(2)
         if self.ReplyCount == 0:
-            log.info(f"{self.username} reply completed.The account has {self.get_user_USD()} USD now")
+            log.info(f"{self.username} reply completed.The account has {self.get_user_usd_prestige()}")
             return
         title = self.get_title(url)
         content = self.get_reply_content()
@@ -424,12 +424,14 @@ class User:
         reply_number = re.search(pat_reply_number , res.text).group(0).replace('共發表帖子: ','')
         return reply_number
 
-    def get_user_USD(self) -> str:
+    def get_user_usd_prestige(self) -> str:
         sleep(2)
         res = requests.get(self.Index , headers = self.Headers , cookies = self.cookies)
-        pat_user_USD = "金錢: \d+"
-        user_USD = re.search(pat_user_USD , res.text).group(0).replace('金錢: ','')
-        return user_USD
+        pat_user_usd = "金錢: \d+"
+        user_usd = re.search(pat_user_usd , res.text).group(0).replace('金錢: ','')
+        pat_user_prestige = "威望: \d+"
+        user_prestige = re.search(pat_user_prestige , res.text).group(0).replace('威望: ','')
+        return f"{user_usd} USD , {user_prestige} 威望."
 
     def get_username(self) -> str:
         return self.username
@@ -453,6 +455,9 @@ for i in range(len(usersList)):
     if user.get_invalid():
         continue
     user.get_today_list()
+    sleep_time = random.randint(TimeIntervalStart,TimeIntervalEnd)
+    log.info(f"{user.get_username()} sleep {sleep_time} seconds")
+    user.set_sleep_time(sleep_time)
     users.append(user)
 
 while True:
