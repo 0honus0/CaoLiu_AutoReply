@@ -50,6 +50,16 @@ TimeIntervalEnd : bool = config.get("gobal_config").get("TimeIntervalEnd", 2048)
 ReplyContent : List = config.get("gobal_config").get("ReplyContent")
 ForbidContent : List = config.get("gobal_config").get("ForbidContent")
 
+def retry(func):
+    def deco(*args , **kargs):
+        retry_number = 3
+        while retry_number > 0:
+            try:
+                return func(*args , **kargs)
+            except:
+                retry_number -= 1
+    return deco
+
 def save_cookies(session : requests.Session , filename : str) -> None:
     with open(filename, 'wb') as f:
         try:
@@ -121,7 +131,8 @@ class User:
         'Host': Host.split("//")[1].replace("/", ""),
         'Proxy-Connection': 'keep-alive',
         'Referer': Login,
-        'User-Agent': UserAgent
+        'User-Agent': UserAgent,
+        'Connection': 'close'
     }
 
     def __init__(self, username : str , password : str , secret : str) -> None:
@@ -307,11 +318,13 @@ class User:
             return
 
     #简单浏览
+    @retry
     def browse(self, url : str) -> None:
         sleep(2)
         res = requests.get(url = url , headers = self.Headers , cookies = self.cookies)
     
     #获取今日帖子
+    @retry
     def get_today_list(self):
         sleep(2)
         res = requests.get(self.Today , headers = self.Headers)
@@ -391,6 +404,7 @@ class User:
         return tid
 
     #获取回复内容的id用于点赞
+    @retry
     def get_reply_id(self, url : str) -> Union[str , None]:
         sleep(2)
         res = requests.get(url = url , headers = self.Headers , cookies = self.cookies)
@@ -401,6 +415,7 @@ class User:
             return reply_id_list[random.randint(0,len(reply_id_list)-1)]
 
     #获取给定url的主题名字
+    @retry
     def get_title(self , url : str) -> str:
         sleep(2)
         res = requests.get(url = url , headers = self.Headers , cookies = self.cookies)
@@ -417,6 +432,7 @@ class User:
         return ReplyContent[random.randint(0,len(ReplyContent)-1)]
 
     # 获取回复次数
+    @retry
     def get_reply_number(self) -> str:
         sleep(2)
         res = requests.get(self.Index , headers = self.Headers , cookies = self.cookies)
@@ -424,6 +440,7 @@ class User:
         reply_number = re.search(pat_reply_number , res.text).group(0).replace('共發表帖子: ','')
         return reply_number
 
+    @retry
     def get_user_usd_prestige(self) -> str:
         sleep(2)
         res = requests.get(self.Index , headers = self.Headers , cookies = self.cookies)
