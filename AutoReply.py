@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.03.10.0"
+__verison__ = "0.23.03.11.0"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -49,6 +49,11 @@ TimeIntervalStart : bool = config.get("gobal_config").get("TimeIntervalStart", 1
 TimeIntervalEnd : bool = config.get("gobal_config").get("TimeIntervalEnd", 2048)
 ReplyContent : List = config.get("gobal_config").get("ReplyContent")
 ForbidContent : List = config.get("gobal_config").get("ForbidContent")
+Proxy : bool = config.get("gobal_config").get("Proxy", False)
+if Proxy:
+    proxies = config.get("gobal_config").get("Proxies")
+else:
+    proxies = {}
 
 def retry(func):
     def deco(*args , **kargs):
@@ -57,6 +62,7 @@ def retry(func):
             try:
                 return func(*args , **kargs)
             except:
+                sleep(3)
                 retry_number -= 1
     return deco
 
@@ -84,7 +90,7 @@ def apitruecaptcha(content : BinaryIO) -> str:
         'userid':userid,
         'apikey':apikey
     }
-    result = requests.post(url, json.dumps(data))
+    result = requests.post(url, json.dumps(data), proxies = proxies)
     res=result.json()
     try:
         code = res['result']
@@ -105,7 +111,7 @@ def ttshitu(content : BinaryIO) -> str:
         'password': apikey ,
         'image':image.decode('utf-8')
     }
-    res=requests.post(url=host,data=json.dumps(data))
+    res=requests.post(url=host,data=json.dumps(data), proxies = proxies)
     res=res.text
     res=json.loads(res)
     res=res['data']['result']
@@ -141,27 +147,34 @@ class User:
         self.secret : str = secret
         self.cookies : requests.cookies = None
         self.s : requests.Session = requests.Session()
-        file : str = f"./{username}.cookies"
-        if os.path.exists(file):
-            load_cookies(self.s, file)
+        self.file : str = f"./{username}.cookies"
+
+    def check_cookies_and_login(self):
+        if os.path.exists(self.file):
+            load_cookies(self.s, self.file)
             if self.is_valid_cookies():
                 if self.is_ban_cookies():
                     self.set_invalid()
+                    self.s.close()
                     return
                 else:
                     self.cookies = self.s.cookies
+                    self.s.close()
                     log.info(f"{self.username} cookies is valid , login success")
                     return
             else:
                 log.info(f"{self.username} cookies is invalid , login again")
         if self.login():
             self.cookies = self.s.cookies
-            save_cookies(self.s, file)
+            save_cookies(self.s, self.file)
             if self.is_ban_cookies():
                 self.set_invalid()
+                self.s.close()
                 return
+            self.s.close()
             log.info(f"{self.username} login success") 
         else:
+            self.s.close()
             log.info(f"{self.username} login failed")
             self.set_invalid()
 
@@ -177,7 +190,7 @@ class User:
             'jumpurl': self.Post,
             'step': '2'
             }
-            login = self.s.post(self.Login , headers = self.Headers , data = data)
+            login = self.s.post(self.Login , headers = self.Headers , data = data, proxies = proxies)
             return login.text
 
         def login2():
@@ -188,7 +201,7 @@ class User:
             'cktime': '0',
             'oneCode': token
             }
-            login=self.s.post(self.Login , headers = self.Headers , data = data)
+            login=self.s.post(self.Login , headers = self.Headers , data = data, proxies = proxies)
             return login.text
 
         def captcha():
@@ -196,7 +209,7 @@ class User:
             code = random.uniform(0,1)
             code = round(code,16)
             VerCode = self.VerCode + str(code)
-            image = self.s.get(VerCode , headers = self.Headers)
+            image = self.s.get(VerCode , headers = self.Headers, proxies = proxies)
             if Input_self:
                 with open("./captcha.png", "wb") as f:
                     f.write(image.content)
@@ -206,7 +219,7 @@ class User:
             data={
                 'validate': vercode
             }
-            login = self.s.post(self.Login , data = data , headers = self.Headers)
+            login = self.s.post(self.Login , data = data , headers = self.Headers, proxies = proxies)
             if "驗證碼不正確，請重新填寫" in login.text:
                 log.info(f"{self.username} captcha with code: {vercode} failed")
             else:
@@ -236,7 +249,7 @@ class User:
     #校验cookies是否有效
     def is_valid_cookies(self) -> bool:
         sleep(2)
-        res = self.s.get(self.Index , headers = self.Headers)
+        res = self.s.get(self.Index , headers = self.Headers, proxies = proxies)
         if res.text.find("上次登錄時間") != -1 :
             return True
         else:
@@ -244,7 +257,7 @@ class User:
 
     def is_ban_cookies(self) -> bool:
         sleep(2)
-        res = self.s.get(self.Index , headers = self.Headers)
+        res = self.s.get(self.Index , headers = self.Headers, proxies = proxies)
         if res.text.find("禁止發言") != -1 :
             return True
         else:
@@ -253,8 +266,7 @@ class User:
     def reply(self, url) -> bool:
         sleep(2)
         if self.ReplyCount == 0:
-            log.info(f"{self.username} reply completed.The account has {self.get_user_usd_prestige()}")
-            return
+            return False
         title = self.get_title(url)
         content = self.get_reply_content()
         tid = self.get_tid(url)
@@ -274,7 +286,7 @@ class User:
             'touid':'',
             'verify':'verify'
         }
-        res = requests.post(url = self.Post , data = data , headers = self.Headers , cookies = self.cookies )
+        res = requests.post(url = self.Post , data = data , headers = self.Headers , cookies = self.cookies , proxies = proxies)
         if res.text.find("發貼完畢點擊進入主題列表") != -1:
             self.ReplyCount -= 1
             log.info(f"{self.username} reply {title} with {content} success , remaining reply times: {self.ReplyCount}" )
@@ -310,7 +322,7 @@ class User:
             'json': '1',
             'url': url
         } 
-        res = requests.post(self.Api , headers = self.Headers , data = data , cookies = self.cookies)
+        res = requests.post(self.Api , headers = self.Headers , data = data , cookies = self.cookies, proxies = proxies)
         try:
             if int(json.loads(res.text)['myMoney']) > 0 :
                 log.info(f"{self.username} like success")
@@ -321,13 +333,13 @@ class User:
     @retry
     def browse(self, url : str) -> None:
         sleep(2)
-        res = requests.get(url = url , headers = self.Headers , cookies = self.cookies)
+        res = requests.get(url = url , headers = self.Headers , cookies = self.cookies, proxies = proxies)
     
     #获取今日帖子
     @retry
     def get_today_list(self):
         sleep(2)
-        res = requests.get(self.Today , headers = self.Headers)
+        res = requests.get(self.Today , headers = self.Headers, proxies = proxies)
         content = res.text
 
         pat_title : str = ('htm_data/\w+/\w+/\w+.html')
@@ -407,7 +419,7 @@ class User:
     @retry
     def get_reply_id(self, url : str) -> Union[str , None]:
         sleep(2)
-        res = requests.get(url = url , headers = self.Headers , cookies = self.cookies)
+        res = requests.get(url = url , headers = self.Headers , cookies = self.cookies, proxies = proxies)
         reply_id_list = re.findall("<a name=#(\d+)><\/a>", res.text)
         if len(reply_id_list) == 0:
             return None
@@ -418,7 +430,7 @@ class User:
     @retry
     def get_title(self , url : str) -> str:
         sleep(2)
-        res = requests.get(url = url , headers = self.Headers , cookies = self.cookies)
+        res = requests.get(url = url , headers = self.Headers , cookies = self.cookies, proxies = proxies)
         pat_title = '<b>本頁主題:</b> .*</td>'
         try:
             title = re.search(pat_title, res.text).group(0)
@@ -435,7 +447,7 @@ class User:
     @retry
     def get_reply_number(self) -> str:
         sleep(2)
-        res = requests.get(self.Index , headers = self.Headers , cookies = self.cookies)
+        res = requests.get(self.Index , headers = self.Headers , cookies = self.cookies, proxies = proxies)
         pat_reply_number = "共發表帖子: \d{1,5}"
         reply_number = re.search(pat_reply_number , res.text).group(0).replace('共發表帖子: ','')
         return reply_number
@@ -443,7 +455,7 @@ class User:
     @retry
     def get_user_usd_prestige(self) -> str:
         sleep(2)
-        res = requests.get(self.Index , headers = self.Headers , cookies = self.cookies)
+        res = requests.get(self.Index , headers = self.Headers , cookies = self.cookies, proxies = proxies)
         pat_user_usd = "金錢: \d+"
         user_usd = re.search(pat_user_usd , res.text).group(0).replace('金錢: ','')
         pat_user_prestige = "威望: \d+"
@@ -469,6 +481,7 @@ class User:
 users = []
 for i in range(len(usersList)):
     user=User(usersList[i]['user'],usersList[i]['password'],usersList[i]['secret'])
+    user.check_cookies_and_login()
     if user.get_invalid():
         continue
     user.get_today_list()
@@ -476,6 +489,11 @@ for i in range(len(usersList)):
     log.info(f"{user.get_username()} sleep {sleep_time} seconds")
     user.set_sleep_time(sleep_time)
     users.append(user)
+
+log.info("--------------------->>>")
+for user in users:
+    log.info(f"{user.get_username()} : {user.get_user_usd_prestige()}")
+log.info("--------------------->>>")
 
 while True:
     return_flag = True
@@ -501,6 +519,10 @@ while True:
         user.set_sleep_time(sleep_time)
 
     if return_flag:
+        log.info("--------------------->>>")
+        for user in users:
+            log.info(f"{user.get_username()} : {user.get_user_usd_prestige()}")
+        log.info("--------------------->>>")
         os._exit(0)
 
     sleep(PollingTime)
