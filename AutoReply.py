@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.03.11.0"
+__verison__ = "0.23.03.11.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -61,9 +61,12 @@ def retry(func):
         while retry_number > 0:
             try:
                 return func(*args , **kargs)
-            except:
+            except IOError:
                 sleep(3)
                 retry_number -= 1
+            except Exception as e:
+                log.error(e)
+                break
     return deco
 
 def save_cookies(session : requests.Session , filename : str) -> None:
@@ -149,6 +152,7 @@ class User:
         self.s : requests.Session = requests.Session()
         self.file : str = f"./{username}.cookies"
 
+    @retry
     def check_cookies_and_login(self):
         if os.path.exists(self.file):
             load_cookies(self.s, self.file)
@@ -263,6 +267,7 @@ class User:
         else:
             return False
 
+    @retry
     def reply(self, url) -> bool:
         sleep(2)
         if self.ReplyCount == 0:
@@ -308,6 +313,7 @@ class User:
             log.error(res.text)
             return False
 
+    @retry
     def like(self, url : str) -> bool:
         if not Like or self.Like:
             return
