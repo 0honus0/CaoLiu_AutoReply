@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.03.11.1"
+__verison__ = "0.23.04.04.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -37,9 +37,10 @@ except FileNotFoundError:
     log.error("配置文件“config.yml”不存在！")
     os._exit(0)
 
+usersList = config.get("users_config")
 userid : str = config.get("gobal_config").get("truecaptcha_config").get("userid")
 apikey : str = config.get("gobal_config").get("truecaptcha_config").get("apikey")
-usersList = config.get("users_config")
+AutoUpdate : bool = config.get("gobal_config").get("AutoUpdate", True)
 PollingTime : int = config.get("gobal_config").get("PollingTime", 5)
 ReplyLimit : int = config.get("gobal_config").get("ReplyLimit", 10)
 Forbid : bool = config.get("gobal_config").get("Forbid", True)
@@ -54,6 +55,23 @@ if Proxy:
     proxies = config.get("gobal_config").get("Proxies")
 else:
     proxies = {}
+
+def getlatest():
+    url = "https://api.github.com/repos/0honus0/CaoLiu_AutoReply/releases/latest"
+    try:
+        response = requests.get(url, proxies = proxies)
+        latest = json.loads(response.text)["tag_name"]
+        return latest
+    except:return __verison__
+
+def update(latestVesion):
+    url = f"https://fastly.jsdelivr.net/gh/0honus0/CaoLiu_AutoReply@{latestVesion}/AutoReply.py"
+    try:
+        response = requests.get(url, proxies = proxies)
+        with open(os.path.basename(__file__), 'wb') as f:
+            f.write(response.content)
+        log.info(f"更新到版本 {latestVesion}")
+    except requests.exceptions.ConnectionError:log.info(f"有新版本 {latestVesion} https://github.com/0honus0/CaoLiu_AutoReply")
 
 def retry(func):
     def deco(*args , **kargs):
@@ -483,6 +501,14 @@ class User:
 
     def get_sleep_time(self) -> int:
         return self.SleepTime
+
+latestVesion = getlatest()
+if __verison__ != latestVesion:
+    if AutoUpdate:
+        update(latestVesion)
+        os.system(f"python {os.path.basename(__file__)}")
+        os._exit(0)
+    else:log.info(f"有新版本 {latestVesion} https://github.com/0honus0/CaoLiu_AutoReply")
 
 users = []
 for i in range(len(usersList)):
