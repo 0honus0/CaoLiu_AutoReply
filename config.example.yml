@@ -4,7 +4,7 @@ users_config:
         # 账号1
     -   user: "AAA" # 用户名
         password: "AAA" # 密码
-        secret: "AAA" # 2FA原始密钥16位或32位
+        secret: "AAA" # 2FA原始密钥16位或32位，若账号未启用2FA，应留空，删除或注释掉会报错
         # 账号2
     -   user: "BBB"
         password: "BBB"
@@ -22,6 +22,8 @@ gobal_config:
     truecaptcha_config:
         userid: "xxxx"
         apikey: "xxxx"
+    # 自动更新
+    AutoUpdate: true
     # 循环间隔
     PollingTime: 5
     #回复次数限制，【新手上路】期上限为10。不宜过高，过高会被版主永久禁言（理由：灌水）
