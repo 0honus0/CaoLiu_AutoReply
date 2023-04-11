@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.04.11.1"
+__verison__ = "0.23.04.04.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -31,7 +31,7 @@ def outputLog(projectName):
 log = outputLog("CaoLiu_AutoReply")
 
 try:
-    with open("config.yml", "r", encoding='utf8') as file:
+    with open("config.yml", "r+", encoding='utf8') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 except FileNotFoundError:
     log.error("配置文件“config.yml”不存在！")
@@ -480,10 +480,10 @@ class User:
     def get_user_usd_prestige(self) -> str:
         sleep(2)
         res = requests.get(self.Index , headers = self.Headers , cookies = self.cookies, proxies = proxies)
-        pat_user_usd = "金錢：\d+"
-        user_usd = re.search(pat_user_usd , res.text).group(0).replace('金錢：','')
-        pat_user_prestige = "威望：\d+"
-        user_prestige = re.search(pat_user_prestige , res.text).group(0).replace('威望：','')
+        pat_user_usd = "金錢: \d+"
+        user_usd = re.search(pat_user_usd , res.text).group(0).replace('金錢: ','')
+        pat_user_prestige = "威望: \d+"
+        user_prestige = re.search(pat_user_prestige , res.text).group(0).replace('威望: ','')
         return f"{user_usd} USD , {user_prestige} 威望."
 
     def get_username(self) -> str:
@@ -555,6 +555,6 @@ while True:
         for user in users:
             log.info(f"{user.get_username()} : {user.get_user_usd_prestige()}")
         log.info("--------------------->>>")
-        break
+        os._exit(0)
 
     sleep(PollingTime)
