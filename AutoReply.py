@@ -71,6 +71,7 @@ def update(latestVesion):
         with open(os.path.basename(__file__), 'wb') as f:
             f.write(response.content)
         log.info(f"更新到版本 {latestVesion}")
+        os._exit(0)
     except requests.exceptions.ConnectionError:log.info(f"有新版本 {latestVesion} https://github.com/0honus0/CaoLiu_AutoReply")
 
 def retry(func):
