@@ -7,7 +7,7 @@
 - 安装依赖：
 
   ```shell
-  pip install -r requirements.txt -t ./
+  pip3 install -r requirements.txt -t ./
   ```
 - 将配置文件 `config.example.yml`，重命名为 `config.yml`，按照提示修改内容即可
 - 运行：
