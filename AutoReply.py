@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.04.11.1"
+__verison__ = "0.23.05.05.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
