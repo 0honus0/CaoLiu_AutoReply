@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.05.05.1"
+__verison__ = "0.23.05.09.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -237,6 +237,7 @@ class User:
                 with open("./captcha.png", "wb") as f:
                     f.write(image.content)
                 vercode = input("请输入验证码: ")
+                os.remove("./captcha.png")
             else:
                 vercode = apitruecaptcha(image.content)
             data={
