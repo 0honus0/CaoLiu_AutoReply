@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.05.13.1"
+__verison__ = "0.23.05.16.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -148,6 +148,7 @@ class User:
     Login : str = f"{Host}login.php"
     Post : str = f"{Host}post.php?"
     Today : str = f"{Host}thread0806.php?fid=7&search=today"
+    Personal_posted : str = f"{Host}personal.php?action=post"
     VerCode : str = f"{Host}require/codeimg.php?"
     Api : str = f"{Host}api.php"
     UserAgent : str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
@@ -361,6 +362,16 @@ class User:
         sleep(2)
         res = requests.get(url = url , headers = self.Headers , cookies = self.cookies, proxies = proxies)
     
+    #获取我的回复列表
+    @retry
+    def get_personal_posted_list(self):
+        sleep(2)
+        res = requests.get(self.Personal_posted , headers = self.Headers , cookies = self.cookies, proxies = proxies)
+        content = res.text
+        posted_pat_title_rule : str = '<a[^>]+class="a2">([^<]+)'
+        posted_pat_title = re.findall(posted_pat_title_rule, content)
+        ForbidContent.extend(posted_pat_title)
+
     #获取今日帖子
     @retry
     def get_today_list(self):
@@ -409,6 +420,7 @@ class User:
                 log.debug(f"{self.username} remove {item} from list")
 
             black_list : List = []
+            log.debug(f"{self.username} 排除： {ForbidContent}")
             for index in range(len(all_content)):
                 content = all_content[index]
                 for item in ForbidContent:
@@ -518,6 +530,7 @@ for i in range(len(usersList)):
     user.check_cookies_and_login()
     if user.get_invalid():
         continue
+    user.get_personal_posted_list()
     user.get_today_list()
     sleep_time = random.randint(TimeIntervalStart,TimeIntervalEnd)
     log.info(f"{user.get_username()} sleep {sleep_time} seconds")
