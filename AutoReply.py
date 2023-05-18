@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.05.16.1"
+__verison__ = "0.23.05.18.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -171,6 +171,7 @@ class User:
         self.cookies : requests.cookies = None
         self.s : requests.Session = requests.Session()
         self.file : str = f"./{username}.cookies"
+        self.excludeContent : list = ForbidContent.copy()
 
     @retry
     def check_cookies_and_login(self):
@@ -370,7 +371,7 @@ class User:
         content = res.text
         posted_pat_title_rule : str = '<a[^>]+class="a2">([^<]+)'
         posted_pat_title = re.findall(posted_pat_title_rule, content)
-        ForbidContent.extend(posted_pat_title)
+        self.excludeContent.extend(posted_pat_title)
 
     #获取今日帖子
     @retry
@@ -420,10 +421,10 @@ class User:
                 log.debug(f"{self.username} remove {item} from list")
 
             black_list : List = []
-            log.debug(f"{self.username} 排除： {ForbidContent}")
+            log.debug(f"{self.username} 排除： {self.excludeContent}")
             for index in range(len(all_content)):
                 content = all_content[index]
-                for item in ForbidContent:
+                for item in self.excludeContent:
                     if item in content:
                         black_list.append(all_title[index])
                         break
