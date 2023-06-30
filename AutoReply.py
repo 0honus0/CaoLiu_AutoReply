@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.05.18.1"
+__verison__ = "0.23.07.01.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -41,6 +41,7 @@ usersList = config.get("users_config")
 userid : str = config.get("gobal_config").get("truecaptcha_config").get("userid")
 apikey : str = config.get("gobal_config").get("truecaptcha_config").get("apikey")
 AutoUpdate : bool = config.get("gobal_config").get("AutoUpdate", True)
+Fid : int = config.get("gobal_config").get("Fid", 7)
 PollingTime : int = config.get("gobal_config").get("PollingTime", 5)
 ReplyLimit : int = config.get("gobal_config").get("ReplyLimit", 10)
 Forbid : bool = config.get("gobal_config").get("Forbid", True)
@@ -147,7 +148,7 @@ class User:
     Index : str = f"{Host}index.php"
     Login : str = f"{Host}login.php"
     Post : str = f"{Host}post.php?"
-    Today : str = f"{Host}thread0806.php?fid=7&search=today"
+    Today : str = f"{Host}thread0806.php?fid={Fid}&search=today"
     Personal_posted : str = f"{Host}personal.php?action=post"
     VerCode : str = f"{Host}require/codeimg.php?"
     Api : str = f"{Host}api.php"
@@ -209,10 +210,8 @@ class User:
             data : Dict = {
             'pwuser': self.username,
             'pwpwd':  self.password,
-            'hideid': '0',
-            'cktime': '0',
-            'forward': self.Post,
-            'jumpurl': self.Post,
+            'jumpurl': 'index.php',
+            'cktime': '31536000',
             'step': '2'
             }
             login = self.s.post(self.Login , headers = self.Headers , data = data, proxies = proxies)
@@ -223,7 +222,7 @@ class User:
             token = otp.get_totp(self.secret)
             data = {
             'step': '2',
-            'cktime': '0',
+            'cktime': '31536000',
             'oneCode': token
             }
             login=self.s.post(self.Login , headers = self.Headers , data = data, proxies = proxies)
@@ -305,7 +304,7 @@ class User:
             'atc_content': content ,
             'step': '2',
             'action': 'reply',
-            'fid': '7',
+            'fid': str(Fid),
             'tid':  tid,
             'atc_attachment': 'none',
             'pid':'',
@@ -329,6 +328,9 @@ class User:
             return False
         elif res.text.find("帖子ID非法") != -1:
             log.info(f"{self.username} reply failed , {url} is invaild")
+            return True
+        elif res.text.find("尚未開啟兩步驗證") != -1:
+            log.info(f"{self.username} reply failed , user not open two steps verify")
             return True
         else:
             log.error(f"{self.username} reply {url} failed , unknown error")
@@ -537,6 +539,10 @@ for i in range(len(usersList)):
     log.info(f"{user.get_username()} sleep {sleep_time} seconds")
     user.set_sleep_time(sleep_time)
     users.append(user)
+
+if len(users) == 0:
+    log.error("No valid users")
+    os._exit(0)
 
 log.info("--------------------->>>")
 for user in users:
