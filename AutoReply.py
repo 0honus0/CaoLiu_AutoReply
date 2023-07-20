@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.07.03.1"
+__verison__ = "0.23.07.20.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -371,7 +371,7 @@ class User:
         sleep(2)
         res = requests.get(self.Personal_posted , headers = self.Headers , cookies = self.cookies, proxies = proxies)
         content = res.text
-        posted_pat_title_rule : str = '<a[^>]+class="a2">([^<]+)'
+        posted_pat_title_rule : str = '<a[^>]+class="a2">(?:<font[^>]+>)?([^<]+)(?:<\/font>)?<\/a>'
         posted_pat_title = re.findall(posted_pat_title_rule, content)
         self.excludeContent.extend(posted_pat_title)
 
