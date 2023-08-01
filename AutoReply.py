@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.07.20.1"
+__verison__ = "0.23.07.30.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -47,8 +47,8 @@ ReplyLimit : int = config.get("gobal_config").get("ReplyLimit", 10)
 Forbid : bool = config.get("gobal_config").get("Forbid", True)
 Input_self : bool = config.get("gobal_config").get("Input_self", False)
 Like : bool = config.get("gobal_config").get("Like", True)
-TimeIntervalStart : bool = config.get("gobal_config").get("TimeIntervalStart", 1024)
-TimeIntervalEnd : bool = config.get("gobal_config").get("TimeIntervalEnd", 2048)
+TimeIntervalStart : int = config.get("gobal_config").get("TimeIntervalStart", 1024)
+TimeIntervalEnd : int = config.get("gobal_config").get("TimeIntervalEnd", 2048)
 ReplyContent : List = config.get("gobal_config").get("ReplyContent")
 ForbidContent : List = config.get("gobal_config").get("ForbidContent")
 Proxy : bool = config.get("gobal_config").get("Proxy", False)
@@ -265,6 +265,9 @@ class User:
         if self.Retry > 0:
             log.debug(f"{self.username} retry login,remaining retry times: %d" % self.Retry)
             self.Retry -= 1
+            sleep_time = random.randint(6,60)
+            log.info(f"{self.username} sleep {sleep_time} seconds")
+            sleep(sleep_time)
             if self.login():
                 return True
         else:
@@ -566,7 +569,7 @@ while True:
         user.browse(url)
         if not user.reply(url):
             user.set_invalid()
-            continue        
+            continue
         user.like(url)
         sleep_time = random.randint(TimeIntervalStart,TimeIntervalEnd)
         log.debug(f"{user.get_username()} sleep {sleep_time} seconds")
