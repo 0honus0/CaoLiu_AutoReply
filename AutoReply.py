@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.07.30.1"
+__verison__ = "0.23.08.02.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -72,7 +72,6 @@ def update(latestVesion):
         with open(os.path.basename(__file__), 'wb') as f:
             f.write(response.content)
         log.info(f"更新到版本 {latestVesion}")
-        os._exit(0)
     except requests.exceptions.ConnectionError:log.info(f"有新版本 {latestVesion} https://github.com/0honus0/CaoLiu_AutoReply")
 
 def retry(func):
@@ -526,8 +525,6 @@ latestVesion = getlatest()
 if __verison__ != latestVesion:
     if AutoUpdate:
         update(latestVesion)
-        os.system(f"python {os.path.basename(__file__)}")
-        os._exit(0)
     else:log.info(f"有新版本 {latestVesion} https://github.com/0honus0/CaoLiu_AutoReply")
 
 users = []
