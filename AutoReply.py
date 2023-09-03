@@ -10,7 +10,9 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-__verison__ = "0.23.08.02.1"
+DEBUG = True
+
+__verison__ = "0.23.09.03.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -308,13 +310,16 @@ class User:
             'action': 'reply',
             'fid': str(Fid),
             'tid':  tid,
-            'atc_attachment': 'none',
+            'page': 'h',
+            # 'atc_attachment': 'none',
             'pid':'',
             'article':'',
             'touid':'',
-            'verify':'verify'
+            'verify':'verify',
+            'Submit': '正在提交回覆..',
         }
         res = requests.post(url = self.Post , data = data , headers = self.Headers , cookies = self.cookies , proxies = proxies)
+        if DEBUG:  print(res.text)
         if res.text.find("發貼完畢點擊進入主題列表") != -1:
             self.ReplyCount -= 1
             log.info(f"{self.username} reply {title} with {content} success , remaining reply times: {self.ReplyCount}" )
@@ -535,9 +540,10 @@ for i in range(len(usersList)):
         continue
     user.get_personal_posted_list()
     user.get_today_list()
-    sleep_time = random.randint(TimeIntervalStart,TimeIntervalEnd)
-    log.info(f"{user.get_username()} sleep {sleep_time} seconds")
-    user.set_sleep_time(sleep_time)
+    if not DEBUG:
+        sleep_time = random.randint(TimeIntervalStart,TimeIntervalEnd)
+        log.info(f"{user.get_username()} sleep {sleep_time} seconds")
+        user.set_sleep_time(sleep_time)
     users.append(user)
 
 if len(users) == 0:
