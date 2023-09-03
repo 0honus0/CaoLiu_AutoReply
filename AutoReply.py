@@ -10,7 +10,7 @@ from typing import BinaryIO , Dict , List , Union
 import base64
 import logging.config ,sys
 
-DEBUG = True
+DEBUG = False
 
 __verison__ = "0.23.09.03.1"
 
