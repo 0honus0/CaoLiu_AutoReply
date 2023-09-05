@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.23.09.03.1"
+__verison__ = "0.23.09.06.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -30,18 +30,17 @@ def outputLog(projectName):
     log.addHandler(file_handler)
     return log
 
-log = outputLog("CaoLiu_AutoReply")
-
 try:
     with open("config.yml", "r", encoding='utf8') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 except FileNotFoundError:
-    log.error("配置文件“config.yml”不存在！")
+    print("配置文件“config.yml”不存在！")
     os._exit(0)
 
 usersList = config.get("users_config")
 userid : str = config.get("gobal_config").get("truecaptcha_config").get("userid")
 apikey : str = config.get("gobal_config").get("truecaptcha_config").get("apikey")
+LogFileName : str = config.get("gobal_config").get("LogFileName", "CaoLiu_AutoReply")
 AutoUpdate : bool = config.get("gobal_config").get("AutoUpdate", True)
 Fid : int = config.get("gobal_config").get("Fid", 7)
 PollingTime : int = config.get("gobal_config").get("PollingTime", 5)
@@ -58,6 +57,8 @@ if Proxy:
     proxies = config.get("gobal_config").get("Proxies")
 else:
     proxies = {}
+
+log = outputLog(LogFileName)
 
 def getlatest():
     url = "https://api.github.com/repos/0honus0/CaoLiu_AutoReply/releases/latest"

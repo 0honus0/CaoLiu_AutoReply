@@ -1,6 +1,7 @@
 # 用户配置，每一组是一个账号,按需进行增减。
 users_config:
     # 注意每行的缩进，建议复制样例再修改。
+    # 同时启用的帐号过多，程序可能会无响应，以少于5个为宜，账号过多时可以通过多开解决
         # 账号1
     -   user: "AAA" # 用户名
         password: "AAA" # 密码
@@ -22,6 +23,8 @@ gobal_config:
     truecaptcha_config:
         userid: "xxxx"
         apikey: "xxxx"
+    # 日志文件文件名，默认值为 "CaoLiu_AutoReply"
+    LogFileName: "CaoLiu_AutoReply"
     # 自动更新
     AutoUpdate: true
     # 回复板块 
