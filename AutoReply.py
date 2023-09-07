@@ -342,7 +342,7 @@ class User:
             log.info(f"{self.username} reply failed , user not open two steps verify")
             return True
         elif res.text.find("該貼已被鎖定") != -1:
-            log.info(f"{self.username} reply failed , user not open two steps verify")
+            log.info(f"{self.username} reply failed , the thread is locked")
             return True
         else:
             log.error(f"{self.username} reply {url} failed , unknown error")
