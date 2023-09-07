@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.23.09.06.1"
+__verison__ = "0.23.09.07.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -338,6 +338,9 @@ class User:
             log.info(f"{self.username} reply failed , {url} is invaild")
             return True
         elif res.text.find("尚未開啟兩步驗證") != -1:
+            log.info(f"{self.username} reply failed , user not open two steps verify")
+            return True
+        elif res.text.find("該貼已被鎖定") != -1:
             log.info(f"{self.username} reply failed , user not open two steps verify")
             return True
         else:
