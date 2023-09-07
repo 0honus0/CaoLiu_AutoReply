@@ -34,7 +34,8 @@ try:
     with open("config.yml", "r", encoding='utf8') as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 except FileNotFoundError:
-    print("配置文件“config.yml”不存在！")
+    log = outputLog('CaoLiu_AutoReply')
+    log.error("配置文件“config.yml”不存在！")
     os._exit(0)
 
 usersList = config.get("users_config")
