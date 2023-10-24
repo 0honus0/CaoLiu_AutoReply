@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.23.09.07.1"
+__verison__ = "0.23.10.24.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -343,6 +343,9 @@ class User:
             return True
         elif res.text.find("該貼已被鎖定") != -1:
             log.info(f"{self.username} reply failed , the thread is locked")
+            return True
+        elif res.text.find("502 Bad Gateway") != -1:
+            log.info(f"{self.username} reply failed , HTTP 502 Error")
             return True
         else:
             log.error(f"{self.username} reply {url} failed , unknown error")
