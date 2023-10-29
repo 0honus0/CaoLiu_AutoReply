@@ -19,7 +19,8 @@ gobal_config:
     #可使用 https://github.com/yuuwill/1024app-uwp 获取免屏蔽域名
     #应填入一个正确的域名，形如"http://t66y.com"是错误的
     Host: "t66y.com" 
-    #从 https://truecaptcha.org/profile.html#info-tab 处注册获取userid和apikey
+    # 配置为 truecaptcha_config 时,从 https://truecaptcha.org/profile.html#info-tab 处注册获取userid和apikey 
+    # 配置为 ttshitu_config 时,从 http://www.ttshitu.com 处获取账号密码
     truecaptcha_config:
         userid: "xxxx"
         apikey: "xxxx"

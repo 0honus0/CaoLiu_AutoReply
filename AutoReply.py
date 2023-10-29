@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.23.10.24.1"
+__verison__ = "0.23.10.29.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -38,9 +38,16 @@ except FileNotFoundError:
     log.error("配置文件“config.yml”不存在！")
     os._exit(0)
 
+if config.get("gobal_config").get("truecaptcha_config") is not None:
+    userid : str = config.get("gobal_config").get("truecaptcha_config").get("userid")
+    apikey : str = config.get("gobal_config").get("truecaptcha_config").get("apikey")
+    captcha_function = "apitruecaptcha"
+elif config.get("gobal_config").get("ttshitu_config") is not None:
+    userid : str = config.get("gobal_config").get("ttshitu_config").get("userid")
+    apikey : str = config.get("gobal_config").get("ttshitu_config").get("apikey")
+    captcha_function = "ttshitu"
+
 usersList = config.get("users_config")
-userid : str = config.get("gobal_config").get("truecaptcha_config").get("userid")
-apikey : str = config.get("gobal_config").get("truecaptcha_config").get("apikey")
 LogFileName : str = config.get("gobal_config").get("LogFileName", "CaoLiu_AutoReply")
 AutoUpdate : bool = config.get("gobal_config").get("AutoUpdate", True)
 Fid : int = config.get("gobal_config").get("Fid", 7)
@@ -138,10 +145,14 @@ def ttshitu(content : BinaryIO) -> str:
         'image':image.decode('utf-8')
     }
     res=requests.post(url=host,data=json.dumps(data), proxies = proxies)
-    res=res.text
-    res=json.loads(res)
-    res=res['data']['result']
-    return res
+    if res.json()["code"] == "-1":
+        log.error("ttshitu api error,info : %s" % res.json()["message"])
+        os._exit(0)
+    else:
+        res=res.text
+        res=json.loads(res)
+        res=res['data']['result']
+        return res
 
 class User:
     Like : bool = False
@@ -243,7 +254,13 @@ class User:
                 vercode = input("请输入验证码: ")
                 os.remove("./captcha.png")
             else:
-                vercode = apitruecaptcha(image.content)
+                if captcha_function == "apitruecaptcha":
+                    vercode = apitruecaptcha(image.content)
+                elif captcha_function == "ttshitu":
+                    vercode = ttshitu(image.content)
+                else:
+                    log.error("验证码识别方式错误")
+                    os._exit(0)
             data={
                 'validate': vercode
             }
