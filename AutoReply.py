@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.23.11.06.1"
+__verison__ = "0.23.12.26.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -361,13 +361,16 @@ class User:
         elif res.text.find("該貼已被鎖定") != -1:
             log.info(f"{self.username} reply failed , the thread is locked")
             return True
+        elif res.text.find("標題為空或標題太長") != -1 or res.text.find("文章長度錯誤") != -1 :
+            log.info(f"{self.username} reply failed , the title is {title} , the content is {content}")
+            return True
         elif res.text.find("403 Forbidden") != -1:
             log.info(f"{self.username} reply failed , HTTP 403 Error , 可能由于触发了风控 , IP被服务器拦截")
             return False
         elif res.text.find("500 Internal Server Error") != -1:
             log.info(f"{self.username} reply failed , HTTP 500 Error")
             return True
-        elif res.text.find("Bad Gateway") != -1:
+        elif res.text.find("Bad Gateway") != -1 or res.text.find("Bad gateway") != -1:
             log.info(f"{self.username} reply failed , HTTP 502 Error")
             return True
         elif res.text.find("520: Web server is returning an unknown error") != -1:
