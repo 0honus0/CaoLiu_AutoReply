@@ -54,7 +54,7 @@ Fid : int = config.get("gobal_config").get("Fid", 7)
 PollingTime : int = config.get("gobal_config").get("PollingTime", 5)
 ReplyLimit : int = config.get("gobal_config").get("ReplyLimit", 10)
 Forbid : bool = config.get("gobal_config").get("Forbid", True)
-Input_self : bool = config.get("gobal_config").get("Input_self", False)
+InputSelf : bool = config.get("gobal_config").get("InputSelf", False)
 Like : bool = config.get("gobal_config").get("Like", True)
 TimeIntervalStart : int = config.get("gobal_config").get("TimeIntervalStart", 1024)
 TimeIntervalEnd : int = config.get("gobal_config").get("TimeIntervalEnd", 2048)
@@ -248,7 +248,7 @@ class User:
             code = round(code,16)
             VerCode = self.VerCode + str(code)
             image = self.s.get(VerCode , headers = self.Headers, proxies = proxies)
-            if Input_self:
+            if InputSelf:
                 with open("./captcha.png", "wb") as f:
                     f.write(image.content)
                 vercode = input("请输入验证码: ")

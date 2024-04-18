@@ -43,7 +43,7 @@ gobal_config:
     #禁止版主帖子回复和关键字屏蔽，不建议修改，容易被禁言一周
     Forbid: true
     #手动输入验证码
-    Input_self: false
+    InputSelf: false
     #每日点赞
     Like: true
     #时间间隔最小值，值不宜过小，【新手上路】期限制1024秒发一帖。频繁发帖也会被禁言
