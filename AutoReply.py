@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.23.12.26.1"
+__verison__ = "0.24.08.26.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -375,6 +375,9 @@ class User:
             return True
         elif res.text.find("520: Web server is returning an unknown error") != -1:
             log.info(f"{self.username} reply failed , HTTP 520 Error")
+            return True
+        elif res.text.find("Cloudflare Ray ID") != -1:
+            log.info(f"{self.username} reply failed , {re.search(r'<title>(.*?)</title>', res.text)}")
             return True
         else:
             log.error(f"{self.username} reply {url} failed , unknown error")
