@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.24.08.26.1"
+__verison__ = "0.24.12.29.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -441,6 +441,7 @@ class User:
         all_username : List = re.findall(pat_user, content)
         title = re.findall(pat_title , content)
         all_title = re.findall(pat_all_title , content)
+        for i in range(len(all_title)):all_title[i] = all_title[i][1:]
         all_content = re.findall(pat_all_content , content)
 
         log.debug(f"{self.username} get list number: {str(len(title))}")
@@ -465,9 +466,9 @@ class User:
             for item in black_list:
                 try:
                     title.remove(item)
-                except:
-                    ...
-                log.debug(f"{self.username} remove {item} from list")
+                    log.debug(f"{self.username} remove {item} from list")
+                except Exception as e:
+                    log.error(f"{self.username} remove {item} from list 失败, 错误类型: {type(e).__name__} 描述: {e}")
 
             black_list : List = []
             log.debug(f"{self.username} 排除： {self.excludeContent}")
@@ -481,9 +482,9 @@ class User:
             for item in black_list:
                 try:
                     title.remove(item)
-                except:
-                    ...
-                log.debug(f"{self.username} remove {item} from list")
+                    log.debug(f"{self.username} remove {item} from list")
+                except Exception as e:
+                    log.error(f"{self.username} remove {item} from list 失败, 错误类型: {type(e).__name__} 描述: {e}")
 
         self.ReplyList = title
         log.debug(f"{self.username} get reply list number {str(len(title))}")
