@@ -433,7 +433,7 @@ class User:
         pat_moderator : str = "版主:([\s\S]*?)<\/span>"
         pat_username : str = "username=(\w+)"
         pat_user : str = 'class="bl">(.*)?</a>'
-        pat_all_title : str = '<h3><a href="([\s\S]*?)"'
+        pat_all_title : str = '<h3><a href="/([\s\S]*?)"'
         pat_all_content : str = '<h3><a href=".*" target="_blank" id=".*">(.*)<\/a><\/h3>'
         moderator : str = re.search(pat_moderator, content).group(0)
         username : List = re.findall(pat_username, moderator)
@@ -441,7 +441,6 @@ class User:
         all_username : List = re.findall(pat_user, content)
         title = re.findall(pat_title , content)
         all_title = re.findall(pat_all_title , content)
-        for i in range(len(all_title)):all_title[i] = all_title[i][1:]
         all_content = re.findall(pat_all_content , content)
 
         log.debug(f"{self.username} get list number: {str(len(title))}")
