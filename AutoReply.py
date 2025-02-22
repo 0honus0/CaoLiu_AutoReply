@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.24.12.29.1"
+__verison__ = "0.25.02.22.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -380,7 +380,7 @@ class User:
             log.info(f"{self.username} reply failed , {re.search(r'<title>(.*?)</title>', res.text)}")
             return True
         else:
-            log.error(f"{self.username} reply {url} failed , unknown error")
+            log.error(f"{self.username} reply {url} failed , unknown error, status code : {res.status_code}")
             log.error(res.text)
             return False
 
@@ -449,11 +449,15 @@ class User:
             if self.RetryList > 0:
                 log.debug(f"{self.username} get list number error , retry get list , remaining retry times: %d" % self.RetryList)
                 self.RetryList -= 1
-                sleep(2)
+                sleep_time = random.randint(6,60)
+                log.debug(f"{self.username} sleep {sleep_time} seconds")
+                sleep(sleep_time)
                 self.get_today_list()
                 return
             else:
-                os._exit(0)
+                self.set_invalid()
+                self.s.close()
+                return
 
         
         if Forbid:
