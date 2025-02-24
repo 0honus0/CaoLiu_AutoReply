@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.25.02.22.1"
+__verison__ = "0.25.02.24.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -270,7 +270,10 @@ class User:
             else:
                 log.info(f"{self.username} captcha with code: {vercode} success") 
 
-        res = login1()
+        try:res = login1()
+        except Exception as e:
+            log.error(f"{self.username} login failed , the reason is: {type(e).__name__}")
+            return True
         if res.find("您已經順利登錄") != -1:
             return True
         elif res.find("賬號已開啟兩步驗證") != -1:
@@ -297,7 +300,10 @@ class User:
     #校验cookies是否有效
     def is_valid_cookies(self) -> bool:
         sleep(2)
-        res = self.s.get(self.Index , headers = self.Headers, proxies = proxies)
+        try:res = self.s.get(self.Index , headers = self.Headers, proxies = proxies)
+        except Exception as e:
+            log.error(f"{self.username} login failed , the reason is: {type(e).__name__}")
+            return True
         if res.text.find("上次登錄時間") != -1 :
             return True
         else:
@@ -337,7 +343,10 @@ class User:
             'verify':'verify',
             'Submit': '正在提交回覆..',
         }
-        res = requests.post(url = self.Post , data = data , headers = self.Headers , cookies = self.cookies , proxies = proxies)
+        try:res = requests.post(url = self.Post , data = data , headers = self.Headers , cookies = self.cookies , proxies = proxies)
+        except Exception as e:
+            log.error(f"{self.username} reply failed , the reason is: {type(e).__name__}")
+            return True
         if DEBUG:  print(res.text)
         if res.text.find("發貼完畢點擊進入主題列表") != -1:
             self.ReplyCount -= 1
@@ -346,8 +355,11 @@ class User:
         elif res.text.find("灌水預防機制") != -1:
             log.info(f"{self.username} reply failed , user replay too frequency")
             return True
-        elif res.text.find("所屬的用戶組") != -1:
+        elif res.text.find("每日最多能發") != -1:
             log.info(f"{self.username} reply failed , day reply times is over")
+            return False
+        elif res.text.find("請先登錄論壇") != -1:
+            log.info(f"{self.username} reply failed , account not logged in")
             return False
         elif res.text.find("管理員禁言, 類型為永久禁言") != -1:
             log.info(f"{self.username} reply failed , user is banned")
@@ -364,16 +376,16 @@ class User:
         elif res.text.find("標題為空或標題太長") != -1 or res.text.find("文章長度錯誤") != -1 :
             log.info(f"{self.username} reply failed , the title is {title} , the content is {content}")
             return True
-        elif res.text.find("403 Forbidden") != -1:
+        elif res.status_code == 403:
             log.info(f"{self.username} reply failed , HTTP 403 Error , 可能由于触发了风控 , IP被服务器拦截")
             return False
-        elif res.text.find("500 Internal Server Error") != -1:
+        elif res.status_code == 500:
             log.info(f"{self.username} reply failed , HTTP 500 Error")
             return True
-        elif res.text.find("Bad Gateway") != -1 or res.text.find("Bad gateway") != -1:
+        elif res.status_code == 502:
             log.info(f"{self.username} reply failed , HTTP 502 Error")
             return True
-        elif res.text.find("520: Web server is returning an unknown error") != -1:
+        elif res.status_code == 520:
             log.info(f"{self.username} reply failed , HTTP 520 Error")
             return True
         elif res.text.find("Cloudflare Ray ID") != -1:
