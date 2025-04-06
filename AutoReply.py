@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.25.02.25.1"
+__verison__ = "0.25.04.06.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -436,68 +436,51 @@ class User:
         res = requests.get(self.Today , headers = self.Headers, proxies = proxies)
         content = res.text
 
-        pat_title : str = ('htm_data/\w+/\w+/\w+.html')
-        pat_moderator : str = "版主:([\s\S]*?)<\/span>"
-        pat_username : str = "username=(\w+)"
-        pat_user : str = 'class="bl">(.*)?</a>'
-        pat_all_title : str = '<h3><a href="/([\s\S]*?)"'
-        pat_all_content : str = '<h3><a href=".*" target="_blank" id=".*">(.*)<\/a><\/h3>'
-        moderator : str = re.search(pat_moderator, content).group(0)
-        username : List = re.findall(pat_username, moderator)
-        content = res.text[res.text.find('普通主題'):]
-        all_username : List = re.findall(pat_user, content)
-        title = re.findall(pat_title , content)
-        all_title = re.findall(pat_all_title , content)
-        all_content = re.findall(pat_all_content , content)
+        # 版主列表 moderator
+        moderator : List = re.findall(r"username=(\w+)", re.search(r"版主:([\s\S]*?)<\/span>", content).group(0))
 
-        log.debug(f"{self.username} get list number: {str(len(title))}")
+        # 提取出所有普通主題
+        content = re.search(r'<tbody style="table-layout:fixed;" id="tbody">(.*?)</tbody>', content, re.DOTALL).group(0)
 
-        if len(all_title) != len(all_username):
-            if self.RetryList > 0:
-                log.debug(f"{self.username} get list number error , retry get list , remaining retry times: %d" % self.RetryList)
-                self.RetryList -= 1
-                sleep_time = random.randint(6,60)
-                log.debug(f"{self.username} sleep {sleep_time} seconds")
-                sleep(sleep_time)
-                self.get_today_list()
-                return
-            else:
-                self.set_invalid()
-                self.s.close()
-                return
+        # 提取出每一个主题, 每个主题以 <tr class="tr3 t_one tac"> ... </tr> 为一组
+        all_threads = []
+        tr_pattern = re.compile(r'<tr class="tr3 t_one tac">(.*?)</tr>',re.DOTALL)
 
+        # 遍历每个匹配到的<tr>块
+        for tr_block in tr_pattern.findall(content):
+            # 屏蔽置顶帖
+            if "Top-marks" in tr_block:continue
+
+            # 提取所有<td>元素
+            td_matches = re.findall(r'<td.*?>(.*?)</td>', tr_block, re.DOTALL)
+
+            # 提取 url 和 title（第二个<td>）
+            url_title_match = re.search(r'<h3>.*?<a href="/(.*?)".*?>(.*?)</a>.*?</h3>', td_matches[1], re.DOTALL)
+            
+            url = url_title_match.group(1)
+            title = re.sub(r'<.*?>', '', url_title_match.group(2)).strip()  # 去除HTML标签
+
+            # 提取 author（第三个<td>）
+            author = re.search(r'<a href=".*?" class="bl">(.*?)</a>', td_matches[2], re.DOTALL).group(1).strip()
+            
+            all_threads.append({
+                'url': url,
+                'title': title,
+                'author': author
+            })
+
+        log.debug(f"{self.username} get list number: {str(len(all_threads))}")
         
         if Forbid:
-            black_list : List = []
-            log.debug("moderator list: " + str(" ".join(username)))
-            for index in range(len(all_username)):
-                if all_username[index].strip() in moderator:
-                    black_list.append(all_title[index])
-            for item in black_list:
-                try:
-                    title.remove(item)
-                    log.debug(f"{self.username} remove {item} from list")
-                except Exception as e:
-                    log.error(f"{self.username} remove {item} from list 失败, 错误类型: {type(e).__name__} 描述: {e}")
-
-            black_list : List = []
-            log.debug(f"{self.username} 排除： {self.excludeContent}")
-            for index in range(len(all_content)):
-                content = all_content[index]
-                for item in self.excludeContent:
-                    if item in content:
-                        black_list.append(all_title[index])
-                        break
-
-            for item in black_list:
-                try:
-                    title.remove(item)
-                    log.debug(f"{self.username} remove {item} from list")
-                except Exception as e:
-                    log.error(f"{self.username} remove {item} from list 失败, 错误类型: {type(e).__name__} 描述: {e}")
-
-        self.ReplyList = title
-        log.debug(f"{self.username} get reply list number {str(len(title))}")
+            log.debug("moderator list: " + str(" ".join(moderator)))
+            do_not_reply = [thread for thread in all_threads if (thread["author"] in moderator) or (thread["title"] in self.excludeContent)]
+            
+            for item in do_not_reply:
+                all_threads.remove(item)
+                log.debug(f"{self.username} remove {item['title']} from list")
+        
+        self.ReplyList = [item["url"] for item in all_threads]
+        log.debug(f"{self.username} get reply list number {str(len(self.ReplyList))}")
 
     #从今日列表中抽取出一个帖子
     def get_one_link(self) -> Union[str , None]:
