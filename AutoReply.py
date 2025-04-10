@@ -12,7 +12,7 @@ import logging.config ,sys
 
 DEBUG = False
 
-__verison__ = "0.25.04.06.1"
+__verison__ = "0.25.04.09.1"
 
 def outputLog(projectName):
     log = logging.getLogger(f"{projectName}")
@@ -188,6 +188,7 @@ class User:
         self.s : requests.Session = requests.Session()
         self.file : str = f"./{username}.cookies"
         self.excludeContent : list = ForbidContent.copy()
+        self.excludeContentBasedTid : list = []
 
     @retry
     def check_cookies_and_login(self):
@@ -425,9 +426,10 @@ class User:
         sleep(2)
         res = requests.get(self.Personal_posted , headers = self.Headers , cookies = self.cookies, proxies = proxies)
         content = res.text
-        posted_pat_title_rule : str = '<a[^>]+class="a2">(?:<font[^>]+>)?([^<]+)(?:<\/font>)?<\/a>'
-        posted_pat_title = re.findall(posted_pat_title_rule, content)
-        self.excludeContent.extend(posted_pat_title)
+        posted_match_rule : str = '<a\s+[^>]*href="\/*([^"]+)"[^>]+class="a2">(?:<font[^>]+>)?(?:[^<]+)(?:<\/font>)?<\/a>'
+        posted_match_url = re.findall(posted_match_rule, content)
+        posted_tid = [self.get_tid(item) for item in posted_match_url]
+        self.excludeContentBasedTid.extend(posted_tid)
 
     #获取今日帖子
     @retry
@@ -455,9 +457,11 @@ class User:
             td_matches = re.findall(r'<td.*?>(.*?)</td>', tr_block, re.DOTALL)
 
             # 提取 url 和 title（第二个<td>）
-            url_title_match = re.search(r'<h3>.*?<a href="/(.*?)".*?>(.*?)</a>.*?</h3>', td_matches[1], re.DOTALL)
+            url_title_match = re.search(r'<h3>.*?<a\s+[^>]*href="/*([^"]+)"[^>]*>(.*?)</a>.*?</h3>', td_matches[1], re.DOTALL)
             
             url = url_title_match.group(1)
+            if "read.php" in url:url = self.get_thread_PseudoStatic_url(url)
+            if not url:continue
             title = re.sub(r'<.*?>', '', url_title_match.group(2)).strip()  # 去除HTML标签
 
             # 提取 author（第三个<td>）
@@ -473,7 +477,7 @@ class User:
         
         if Forbid:
             log.debug("moderator list: " + str(" ".join(moderator)))
-            do_not_reply = [thread for thread in all_threads if (thread["author"] in moderator) or (thread["title"] in self.excludeContent)]
+            do_not_reply = [thread for thread in all_threads if (thread["author"] in moderator) or (self.get_tid(thread["url"]) in self.excludeContentBasedTid)]
             
             for item in do_not_reply:
                 all_threads.remove(item)
@@ -481,6 +485,12 @@ class User:
         
         self.ReplyList = [item["url"] for item in all_threads]
         log.debug(f"{self.username} get reply list number {str(len(self.ReplyList))}")
+
+    # 获取帖子的伪静态url
+    def get_thread_PseudoStatic_url(self, url : str) -> str:
+        res = requests.get(self.Host + url , headers = self.Headers, proxies = proxies)
+        if "如果您的瀏覽器沒有自動跳轉" in res.text:return re.search(r'<a\s+[^>]*href="/*([^"]+)"[^>]* class="s5">如果您的瀏覽器沒有自動跳轉', res.text).group(1)
+        else:return False
 
     #从今日列表中抽取出一个帖子
     def get_one_link(self) -> Union[str , None]:
@@ -492,10 +502,10 @@ class User:
         return f"{self.Host}{url}"
 
     #从url中提取出tid
-    def get_tid(self , url : str) -> str:
-        pat_tid = "/(\d+).html"
-        tid = re.search(pat_tid , url).group(1)
-        return tid
+    def get_tid(self, url: str) -> str:
+        pat_tid = r"(?:/(\d+)\.html|tid=(\d+))"
+        match = re.search(pat_tid, url)
+        return match.group(1) or match.group(2)
 
     #获取回复内容的id用于点赞
     @retry
@@ -538,11 +548,13 @@ class User:
     def get_user_usd_prestige(self) -> str:
         sleep(2)
         res = requests.get(self.Index , headers = self.Headers , cookies = self.cookies, proxies = proxies)
-        pat_user_usd = "金錢：\d+"
-        user_usd = re.search(pat_user_usd , res.text).group(0).replace('金錢：','')
-        pat_user_prestige = "威望：\d+"
-        user_prestige = re.search(pat_user_prestige , res.text).group(0).replace('威望：','')
-        return f"{user_usd} USD , {user_prestige} 威望."
+        if "請輸入用戶名" not in res.text:
+            pat_user_usd = "金錢：\d+"
+            user_usd = re.search(pat_user_usd , res.text).group(0).replace('金錢：','')
+            pat_user_prestige = "威望：\d+"
+            user_prestige = re.search(pat_user_prestige , res.text).group(0).replace('威望：','')
+            return f"{user_usd} USD , {user_prestige} 威望."
+        else:return "账号未登录"
 
     def get_username(self) -> str:
         return self.username
